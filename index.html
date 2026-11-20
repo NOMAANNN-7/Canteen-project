@@ -1,0 +1,922 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Campus Quick Bite – Smart Canteen Ordering System</title>
+  <!-- Google Fonts: Inter & Outfit -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Outfit:wght@500;600;700;800&display=swap" rel="stylesheet">
+  <!-- QRCode.js via CDN with local fallback -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <!-- System Navigation / Top Demo Bar -->
+  <nav class="system-navbar" id="systemNavbar">
+    <div class="nav-brand">
+      <span class="brand-badge">CAMPUS QUICK BITE</span>
+      <span class="role-badge">Smart Canteen System</span>
+    </div>
+    <div class="nav-views">
+      <button class="nav-tab active" data-view="kiosk">
+        <span class="icon">🎓</span> Student Kiosk
+      </button>
+      <button class="nav-tab" data-view="kitchen">
+        <span class="icon">👨‍🍳</span> Kitchen Console
+        <span class="badge" id="kitchenOrderCountBadge">0</span>
+      </button>
+      <button class="nav-tab" data-view="display">
+        <span class="icon">📺</span> Live Pickup Board
+      </button>
+      <button class="nav-tab" data-view="tracker">
+        <span class="icon">📍</span> Order Tracker
+      </button>
+      <button class="nav-tab" data-view="wallet">
+        <span class="icon">💳</span> Student Wallet
+      </button>
+    </div>
+    <div class="nav-tools">
+      <span class="live-clock-pill" id="globalClock">12:00:00 PM</span>
+      <button class="btn-sound-toggle" id="globalSoundBtn" title="Toggle Sound Chimes">
+        🔊 Sound ON
+      </button>
+    </div>
+  </nav>
+
+  <!-- ========================================== -->
+  <!-- 1. STUDENT ORDERING KIOSK VIEW             -->
+  <!-- ========================================== -->
+  <main class="view-section active" id="view-kiosk">
+    <!-- Kiosk Header -->
+    <header class="kiosk-header">
+      <div class="kiosk-header-main">
+        <div class="kiosk-branding">
+          <div class="brand-logo-icon">🍔</div>
+          <div>
+            <h1 class="brand-title">Campus Quick Bite</h1>
+            <p class="brand-tagline">College Canteen • Fresh, Fast & Delicious Meals</p>
+          </div>
+        </div>
+
+        <div class="kiosk-search-wrap">
+          <span class="search-icon">🔍</span>
+          <input type="text" id="menuSearchInput" placeholder="Search samosa, maggi, coffee, dosa..." aria-label="Search menu">
+          <button class="clear-search-btn" id="clearSearchBtn" style="display: none;">✕</button>
+        </div>
+
+        <div class="kiosk-header-actions">
+          <div class="operating-hours-pill">
+            <span class="status-dot green"></span>
+            <div>
+              <span class="hours-title">Canteen Open</span>
+              <span class="hours-sub">8:00 AM – 6:30 PM (Counters 1 & 2)</span>
+            </div>
+          </div>
+
+          <button class="header-action-btn wallet-btn" id="openWalletBtn">
+            <span class="icon">💳</span>
+            <div class="btn-text">
+              <span class="subtext">Student Balance</span>
+              <span class="maintext" id="kioskWalletDisplay">₹500</span>
+            </div>
+          </button>
+
+          <button class="header-action-btn track-btn" id="quickTrackBtn">
+            <span class="icon">📍</span>
+            <div class="btn-text">
+              <span class="subtext">Recent Order</span>
+              <span class="maintext" id="kioskRecentTokenDisplay">Track</span>
+            </div>
+          </button>
+
+          <button class="cart-trigger-btn" id="openCartBtn" aria-label="Open Shopping Cart">
+            <span class="cart-icon">🛒</span>
+            <div class="cart-btn-info">
+              <span class="cart-label">My Tray</span>
+              <span class="cart-total-badge" id="kioskCartTotalDisplay">₹0</span>
+            </div>
+            <span class="cart-count-bubble" id="cartCountBadge">0</span>
+          </button>
+        </div>
+      </div>
+
+      <!-- Category Filter Pills -->
+      <nav class="category-nav">
+        <button class="category-pill active" data-category="all">
+          <span class="cat-icon">🍽️</span> All Items
+        </button>
+        <button class="category-pill" data-category="Breakfast">
+          <span class="cat-icon">🥞</span> Breakfast
+        </button>
+        <button class="category-pill" data-category="Snacks">
+          <span class="cat-icon">🍟</span> Snacks
+        </button>
+        <button class="category-pill" data-category="Meals">
+          <span class="cat-icon">🍛</span> Meals
+        </button>
+        <button class="category-pill" data-category="Beverages">
+          <span class="cat-icon">☕</span> Beverages
+        </button>
+        <button class="category-pill" data-category="Desserts">
+          <span class="cat-icon">🍨</span> Desserts
+        </button>
+      </nav>
+    </header>
+
+    <!-- Menu Grid Section -->
+    <section class="menu-container">
+      <div class="menu-meta-bar">
+        <div class="meta-title-wrap">
+          <h2 class="menu-section-title" id="currentCategoryTitle">All Menu Items</h2>
+          <span class="item-count-text" id="menuItemCount">20 items available</span>
+        </div>
+        <div class="menu-sort-filter">
+          <label for="sortSelect">Sort:</label>
+          <select id="sortSelect">
+            <option value="default">Popular / Recommended</option>
+            <option value="price-low">Price: Low to High</option>
+            <option value="price-high">Price: High to Low</option>
+            <option value="prep-fast">Fastest Prep Time</option>
+          </select>
+        </div>
+      </div>
+
+      <!-- Food Cards Grid -->
+      <div class="food-grid" id="foodGrid">
+        <!-- Rendered dynamically by script.js -->
+      </div>
+
+      <!-- Empty state when no items match search -->
+      <div class="empty-menu-state" id="emptyMenuState" style="display: none;">
+        <span class="empty-icon">🍽️</span>
+        <h3>No matching dishes found</h3>
+        <p>Try searching for Samosa, Cold Coffee, Maggi, or clear your filters.</p>
+        <button class="btn-primary" id="resetSearchBtn">View All Items</button>
+      </div>
+    </section>
+  </main>
+
+  <!-- ========================================== -->
+  <!-- 2. KITCHEN ORDER MANAGEMENT CONSOLE        -->
+  <!-- ========================================== -->
+  <main class="view-section" id="view-kitchen">
+    <div class="kitchen-container">
+      <!-- Kitchen Header -->
+      <header class="kitchen-header">
+        <div class="kitchen-title-area">
+          <div class="kitchen-logo-tag">👨‍🍳 KITCHEN KDS</div>
+          <div>
+            <h2>Canteen Order Management Console</h2>
+            <p>Live Kitchen Display System (KDS) • Real-time order dispatch</p>
+          </div>
+        </div>
+
+        <div class="kitchen-controls">
+          <div class="kitchen-search">
+            <input type="text" id="kitchenSearchInput" placeholder="Filter by Token #B-... or item">
+          </div>
+          <button class="btn-secondary" id="clearCompletedBtn" title="Clear Picked-up orders">
+            🗑️ Clear Completed
+          </button>
+          <button class="btn-primary" id="toggleInventoryModalBtn">
+            📦 Stock & Inventory
+          </button>
+        </div>
+      </header>
+
+      <!-- Kitchen Stats Bar -->
+      <div class="kitchen-stats-grid">
+        <div class="stat-card" data-status-filter="all">
+          <div class="stat-number" id="statTotalOrders">0</div>
+          <div class="stat-label">Total Active</div>
+        </div>
+        <div class="stat-card stat-paid active" data-status-filter="PAID">
+          <div class="stat-number" id="statPaidOrders">0</div>
+          <div class="stat-label">New Paid Orders</div>
+        </div>
+        <div class="stat-card stat-preparing" data-status-filter="PREPARING">
+          <div class="stat-number" id="statPreparingOrders">0</div>
+          <div class="stat-label">Now Preparing</div>
+        </div>
+        <div class="stat-card stat-ready" data-status-filter="READY">
+          <div class="stat-number" id="statReadyOrders">0</div>
+          <div class="stat-label">Ready for Pickup</div>
+        </div>
+        <div class="stat-card stat-picked" data-status-filter="PICKED_UP">
+          <div class="stat-number" id="statPickedOrders">0</div>
+          <div class="stat-label">Picked Up Today</div>
+        </div>
+      </div>
+
+      <!-- Filter pills for mobile / quick selection -->
+      <div class="kitchen-filter-tabs">
+        <button class="kitchen-tab-btn active" data-filter="all">All Orders</button>
+        <button class="kitchen-tab-btn" data-filter="PAID">Paid (Pending)</button>
+        <button class="kitchen-tab-btn" data-filter="PREPARING">Preparing</button>
+        <button class="kitchen-tab-btn" data-filter="READY">Ready</button>
+        <button class="kitchen-tab-btn" data-filter="PICKED_UP">Picked Up</button>
+      </div>
+
+      <!-- Kitchen Cards Grid -->
+      <div class="kitchen-cards-grid" id="kitchenCardsGrid">
+        <!-- Rendered dynamically -->
+      </div>
+
+      <!-- Empty state -->
+      <div class="empty-kitchen-state" id="emptyKitchenState" style="display: none;">
+        <span class="empty-icon">🍳</span>
+        <h3>Kitchen Queue is Clear!</h3>
+        <p>No active orders in this view. New student orders will automatically appear here with a chime sound.</p>
+      </div>
+    </div>
+  </main>
+
+  <!-- ========================================== -->
+  <!-- 3. LIVE CANTEEN PICKUP DISPLAY (TV WALL)   -->
+  <!-- ========================================== -->
+  <main class="view-section" id="view-display">
+    <div class="tv-display-container">
+      <!-- TV Header -->
+      <header class="tv-header">
+        <div class="tv-brand">
+          <span class="tv-icon">⚡</span>
+          <div>
+            <h1 class="tv-title">CAMPUS QUICK BITE</h1>
+            <p class="tv-subtitle">CANTEEN TOKEN PICKUP BOARD • COUNTER 1 & 2</p>
+          </div>
+        </div>
+
+        <div class="tv-header-center">
+          <div class="tv-announcement-pill" id="tvAudioStatusPill">
+            <span class="sound-wave-icon">🔊</span>
+            <span id="tvSpeechStatusText">Voice Announcements: ACTIVE</span>
+          </div>
+          <button class="tv-toggle-speech-btn" id="toggleSpeechBtn">Toggle Voice</button>
+        </div>
+
+        <div class="tv-clock-box">
+          <div class="tv-time" id="tvClockTime">12:00:00 PM</div>
+          <div class="tv-date" id="tvClockDate">Friday, 20 Nov 2026</div>
+        </div>
+      </header>
+
+      <!-- TV Two-Column Display -->
+      <div class="tv-columns-layout">
+        <!-- LEFT: NOW PREPARING -->
+        <section class="tv-column preparing-col">
+          <div class="tv-col-header">
+            <div class="col-title-wrap">
+              <span class="pulse-indicator orange"></span>
+              <h2>NOW PREPARING</h2>
+            </div>
+            <span class="col-count-badge" id="tvPreparingCount">0 In Kitchen</span>
+          </div>
+          <div class="tv-tokens-grid" id="tvPreparingGrid">
+            <!-- Dynamic tokens -->
+          </div>
+          <div class="tv-empty-column" id="tvPreparingEmpty" style="display: none;">
+            <p>No meals currently preparing</p>
+          </div>
+        </section>
+
+        <!-- RIGHT: READY FOR PICKUP -->
+        <section class="tv-column ready-col">
+          <div class="tv-col-header">
+            <div class="col-title-wrap">
+              <span class="pulse-indicator green"></span>
+              <h2>READY FOR PICKUP</h2>
+            </div>
+            <span class="col-count-badge green-badge" id="tvReadyCount">0 Ready Now</span>
+          </div>
+          <div class="tv-tokens-grid" id="tvReadyGrid">
+            <!-- Dynamic tokens -->
+          </div>
+          <div class="tv-empty-column" id="tvReadyEmpty" style="display: none;">
+            <p>Ready orders will appear here</p>
+          </div>
+        </section>
+      </div>
+
+      <!-- TV Footer Ticker -->
+      <footer class="tv-footer-ticker">
+        <div class="ticker-content">
+          <span>📢 Please present your digital token at Counter 1 or 2 when your number turns green.</span>
+          <span>⚡ Freshly prepared food • Estimated average wait time: 4-6 minutes.</span>
+          <span>💳 Re-charge student canteen wallet at cash desk or order online anytime!</span>
+        </div>
+      </footer>
+    </div>
+  </main>
+
+  <!-- ========================================== -->
+  <!-- 4. ORDER TRACKER VIEW                      -->
+  <!-- ========================================== -->
+  <main class="view-section" id="view-tracker">
+    <div class="tracker-container">
+      <div class="tracker-card">
+        <div class="tracker-header">
+          <h2>Track Your Canteen Order</h2>
+          <p>Enter your token number to view live cooking & pickup status</p>
+        </div>
+
+        <div class="tracker-input-row">
+          <input type="text" id="trackTokenInput" placeholder="e.g. #B-001 or B-001" maxlength="10">
+          <button class="btn-primary" id="trackOrderSubmitBtn">Track Status</button>
+        </div>
+
+        <div class="tracker-recent-pills" id="trackerRecentPills">
+          <span class="recent-label">Your Recent Tokens:</span>
+          <!-- Dynamic tokens list -->
+        </div>
+
+        <!-- Tracking Visual Stepper -->
+        <div class="tracking-result-box" id="trackingResultBox" style="display: none;">
+          <div class="result-header">
+            <div class="token-large-badge" id="trackDisplayToken">#B-001</div>
+            <div class="order-type-tag" id="trackDisplaySlot">Dine-in / Immediate</div>
+          </div>
+
+          <div class="stepper-wrap">
+            <div class="step-item" id="step-paid">
+              <div class="step-circle">1</div>
+              <div class="step-label">Order Placed</div>
+              <div class="step-time" id="stepTime-paid">--:--</div>
+            </div>
+            <div class="step-connector" id="conn-1"></div>
+
+            <div class="step-item" id="step-preparing">
+              <div class="step-circle">2</div>
+              <div class="step-label">Cooking in Kitchen</div>
+              <div class="step-time" id="stepTime-preparing">--:--</div>
+            </div>
+            <div class="step-connector" id="conn-2"></div>
+
+            <div class="step-item" id="step-ready">
+              <div class="step-circle">3</div>
+              <div class="step-label">Ready for Pickup</div>
+              <div class="step-time" id="stepTime-ready">Counter 1</div>
+            </div>
+            <div class="step-connector" id="conn-3"></div>
+
+            <div class="step-item" id="step-picked">
+              <div class="step-circle">4</div>
+              <div class="step-label">Picked Up</div>
+              <div class="step-time" id="stepTime-picked">Completed</div>
+            </div>
+          </div>
+
+          <!-- Dynamic Status Message Box -->
+          <div class="status-message-box" id="trackStatusMessageBox">
+            <span class="status-icon" id="trackStatusIcon">🍳</span>
+            <div>
+              <h4 id="trackStatusHeadline">Your food is currently being prepared!</h4>
+              <p id="trackStatusDetail">Chef is grilling your order. Estimated ready in approx 4 mins.</p>
+            </div>
+          </div>
+
+          <!-- Tracked Order Items summary -->
+          <div class="tracker-items-summary">
+            <h4>Ordered Items</h4>
+            <div class="tracker-items-list" id="trackItemsList">
+              <!-- Dynamic -->
+            </div>
+            <div class="tracker-total-row">
+              <span>Total Paid:</span>
+              <strong id="trackTotalPaid">₹0</strong>
+            </div>
+          </div>
+        </div>
+
+        <!-- No token found state -->
+        <div class="tracker-not-found" id="trackerNotFound" style="display: none;">
+          <span class="icon">🔍</span>
+          <h4>No order found with this token</h4>
+          <p>Please double-check your token number or place a new order from the kiosk.</p>
+        </div>
+      </div>
+    </div>
+  </main>
+
+  <!-- ========================================== -->
+  <!-- 5. STUDENT WALLET VIEW                     -->
+  <!-- ========================================== -->
+  <main class="view-section" id="view-wallet">
+    <div class="wallet-container">
+      <div class="wallet-card-shell">
+        <!-- Visual Canteen ID / Wallet Card -->
+        <div class="student-id-card">
+          <div class="card-chip"></div>
+          <div class="card-logo">CAMPUS QUICK BITE • PASS</div>
+          <div class="card-balance-section">
+            <span class="balance-title">CANTEEN WALLET BALANCE</span>
+            <div class="balance-amount" id="walletMainBalance">₹500.00</div>
+          </div>
+          <div class="card-footer-info">
+            <div>
+              <span class="card-info-label">STUDENT NAME</span>
+              <span class="card-info-val">Aarav Sharma</span>
+            </div>
+            <div>
+              <span class="card-info-label">STUDENT ID</span>
+              <span class="card-info-val">CS-2024-8842</span>
+            </div>
+            <div>
+              <span class="card-info-label">STATUS</span>
+              <span class="card-status-badge">ACTIVE</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Top-up / Actions -->
+        <div class="wallet-actions-card">
+          <h3>Quick Top-Up (Simulation)</h3>
+          <p>Add demo credits to test instant one-click wallet payments at checkout</p>
+          <div class="topup-btn-group">
+            <button class="topup-btn" data-amount="50">+ ₹50</button>
+            <button class="topup-btn" data-amount="100">+ ₹100</button>
+            <button class="topup-btn" data-amount="200">+ ₹200</button>
+            <button class="topup-btn" data-amount="500">+ ₹500</button>
+          </div>
+          <div class="custom-topup-row">
+            <input type="number" id="customTopupInput" placeholder="Enter custom amount (₹)" min="10" max="2000">
+            <button class="btn-primary" id="customTopupBtn">Add Funds</button>
+          </div>
+        </div>
+
+        <!-- Transaction History -->
+        <div class="wallet-history-card">
+          <div class="history-header">
+            <h3>Wallet Transaction History</h3>
+            <button class="btn-text-only" id="resetWalletBtn">Reset to ₹500</button>
+          </div>
+          <div class="transaction-list" id="transactionList">
+            <!-- Dynamic transactions -->
+          </div>
+        </div>
+      </div>
+    </div>
+  </main>
+
+  <!-- ========================================== -->
+  <!-- MODAL: ITEM CUSTOMIZATION                  -->
+  <!-- ========================================== -->
+  <div class="modal-backdrop" id="customizationModal" style="display: none;">
+    <div class="customization-modal-dialog">
+      <button class="modal-close-btn" id="closeCustomizationBtn" aria-label="Close modal">✕</button>
+
+      <div class="custom-modal-header">
+        <div class="custom-item-img-wrap">
+          <img id="customItemImage" src="" alt="Item photo">
+        </div>
+        <div class="custom-item-meta">
+          <div class="item-tag-row">
+            <span class="veg-badge" id="customItemVegBadge">🟢 Veg</span>
+            <span class="category-tag" id="customItemCategory">Beverage</span>
+          </div>
+          <h2 id="customItemName">Cold Coffee</h2>
+          <p class="custom-item-desc" id="customItemDesc">Chilled blended brew with creamy milk.</p>
+          <div class="custom-item-price-row">
+            <span class="base-price-label">Base Price:</span>
+            <span class="base-price-val" id="customItemBasePrice">₹40</span>
+            <span class="prep-badge">⏱️ <span id="customItemPrepTime">5</span> min</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="custom-modal-body">
+        <!-- Beverage Size Options (Visible for beverages) -->
+        <div class="custom-group" id="beverageSizeGroup" style="display: none;">
+          <h4 class="custom-group-title">Select Drink Size</h4>
+          <div class="custom-options-row">
+            <label class="custom-option-pill">
+              <input type="radio" name="bevSize" value="Regular" checked>
+              <span>Regular</span>
+              <span class="opt-price">₹0</span>
+            </label>
+            <label class="custom-option-pill">
+              <input type="radio" name="bevSize" value="Large (+₹15)">
+              <span>Large</span>
+              <span class="opt-price">+₹15</span>
+            </label>
+          </div>
+        </div>
+
+        <!-- Beverage Milk Preferences (Visible for beverages) -->
+        <div class="custom-group" id="beverageMilkGroup" style="display: none;">
+          <h4 class="custom-group-title">Milk Preference</h4>
+          <div class="custom-options-row">
+            <label class="custom-option-pill">
+              <input type="radio" name="bevMilk" value="Standard Milk" checked>
+              <span>Full Cream Milk</span>
+              <span class="opt-free">Included</span>
+            </label>
+            <label class="custom-option-pill">
+              <input type="radio" name="bevMilk" value="Oat / Almond Milk (+₹10)">
+              <span>Oat / Almond Milk</span>
+              <span class="opt-price">+₹10</span>
+            </label>
+          </div>
+        </div>
+
+        <!-- Beverage Add-ons & Sugar -->
+        <div class="custom-group" id="beverageOptionsGroup" style="display: none;">
+          <h4 class="custom-group-title">Beverage Customizations</h4>
+          <div class="custom-checkbox-grid">
+            <label class="custom-check-pill">
+              <input type="checkbox" name="bevCustom" value="Less Sugar" data-price="0">
+              <span>Less Sugar</span>
+              <span class="opt-free">Free</span>
+            </label>
+            <label class="custom-check-pill">
+              <input type="checkbox" name="bevCustom" value="Extra Sugar" data-price="0">
+              <span>Extra Sugar</span>
+              <span class="opt-free">Free</span>
+            </label>
+            <label class="custom-check-pill">
+              <input type="checkbox" name="bevCustom" value="Extra Ice Cream" data-price="15">
+              <span>Extra Ice Cream</span>
+              <span class="opt-price">+₹15</span>
+            </label>
+            <label class="custom-check-pill">
+              <input type="checkbox" name="bevCustom" value="Extra Shot" data-price="10">
+              <span>Extra Shot</span>
+              <span class="opt-price">+₹10</span>
+            </label>
+          </div>
+        </div>
+
+        <!-- Food Add-ons -->
+        <div class="custom-group" id="foodOptionsGroup" style="display: none;">
+          <h4 class="custom-group-title">Food Customizations</h4>
+          <div class="custom-checkbox-grid">
+            <label class="custom-check-pill">
+              <input type="checkbox" name="foodCustom" value="Extra Cheese" data-price="15">
+              <span>Extra Cheese</span>
+              <span class="opt-price">+₹15</span>
+            </label>
+            <label class="custom-check-pill">
+              <input type="checkbox" name="foodCustom" value="Extra Butter" data-price="10">
+              <span>Extra Butter</span>
+              <span class="opt-price">+₹10</span>
+            </label>
+            <label class="custom-check-pill">
+              <input type="checkbox" name="foodCustom" value="Extra Masala" data-price="5">
+              <span>Extra Masala</span>
+              <span class="opt-price">+₹5</span>
+            </label>
+            <label class="custom-check-pill">
+              <input type="checkbox" name="foodCustom" value="Less Spicy" data-price="0">
+              <span>Less Spicy</span>
+              <span class="opt-free">Free</span>
+            </label>
+          </div>
+        </div>
+
+        <!-- Quantity Selector in modal -->
+        <div class="custom-quantity-row">
+          <span class="qty-label">Quantity:</span>
+          <div class="qty-counter-control">
+            <button class="qty-btn" id="customQtyMinusBtn" aria-label="Decrease quantity">−</button>
+            <span class="qty-value" id="customQtyValue">1</span>
+            <button class="qty-btn" id="customQtyPlusBtn" aria-label="Increase quantity">+</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="custom-modal-footer">
+        <div class="modal-total-calc">
+          <span class="calc-label">Calculated Price:</span>
+          <span class="calc-amount" id="customDynamicTotal">₹40</span>
+        </div>
+        <div class="modal-footer-actions">
+          <button class="btn-secondary" id="cancelCustomizationBtn">Cancel</button>
+          <button class="btn-primary" id="confirmAddToCartBtn">Add to Cart • <span id="confirmAddBtnPrice">₹40</span></button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ========================================== -->
+  <!-- SLIDE-IN CART DRAWER                       -->
+  <!-- ========================================== -->
+  <div class="cart-drawer-backdrop" id="cartDrawerBackdrop" style="display: none;"></div>
+  <aside class="cart-drawer" id="cartDrawer">
+    <div class="cart-drawer-header">
+      <div class="drawer-title-row">
+        <h3>🛒 Your Canteen Tray</h3>
+        <span class="item-badge" id="cartDrawerCount">0 items</span>
+      </div>
+      <div class="drawer-header-actions">
+        <button class="btn-clear-cart" id="clearCartBtn" title="Clear all items">Empty Tray</button>
+        <button class="btn-close-drawer" id="closeCartBtn" aria-label="Close cart drawer">✕</button>
+      </div>
+    </div>
+
+    <!-- Lunch Pre-Booking Slot Selector -->
+    <div class="cart-prebooking-section">
+      <div class="section-label-row">
+        <span class="slot-icon">⏰</span>
+        <label for="pickupSlotSelect"><strong>Pickup Time Slot:</strong></label>
+      </div>
+      <select id="pickupSlotSelect" class="slot-select">
+        <option value="Immediate">⚡ Immediate Prep (Ready in ~5 min)</option>
+        <option value="12:30 PM">🍱 Lunch Pre-booking – 12:30 PM</option>
+        <option value="12:45 PM">🍱 Lunch Pre-booking – 12:45 PM</option>
+        <option value="1:00 PM">🍱 Lunch Pre-booking – 1:00 PM</option>
+        <option value="1:15 PM">🍱 Lunch Pre-booking – 1:15 PM</option>
+        <option value="1:30 PM">🍱 Lunch Pre-booking – 1:30 PM</option>
+        <option value="1:45 PM">🍱 Lunch Pre-booking – 1:45 PM</option>
+      </select>
+      <div class="slot-notice" id="slotNoticeText">Immediate: Kitchen prepares upon payment</div>
+    </div>
+
+    <!-- Takeaway Packaging Checkbox -->
+    <div class="packaging-option-box">
+      <label class="packaging-checkbox-label">
+        <input type="checkbox" id="takeawayCheckbox">
+        <div>
+          <span class="pkg-title">Eco-friendly Takeaway Packaging (+₹5)</span>
+          <span class="pkg-sub">Boxed for carrying back to classroom or hostel</span>
+        </div>
+      </label>
+    </div>
+
+    <!-- Cart Items Scroll List -->
+    <div class="cart-items-list" id="cartItemsList">
+      <!-- Dynamic list -->
+    </div>
+
+    <!-- Empty Cart State -->
+    <div class="empty-cart-view" id="emptyCartView" style="display: none;">
+      <span class="empty-tray-icon">🍱</span>
+      <h4>Your Tray is Empty</h4>
+      <p>Select delicious snacks, meals, or hot chai from the menu to get started.</p>
+      <button class="btn-primary" id="returnToMenuBtn">Browse Menu</button>
+    </div>
+
+    <!-- Cart Footer & Bill Breakdown -->
+    <div class="cart-drawer-footer" id="cartDrawerFooter">
+      <div class="bill-breakdown">
+        <div class="bill-row">
+          <span>Items Subtotal</span>
+          <span id="billSubtotal">₹0</span>
+        </div>
+        <div class="bill-row" id="packagingFeeRow" style="display: none;">
+          <span>Packaging Fee</span>
+          <span id="billPackagingFee">₹5</span>
+        </div>
+        <div class="bill-row">
+          <span>Campus Taxes & Canteen Fee</span>
+          <span class="text-free">₹0 (Subsidized)</span>
+        </div>
+        <div class="bill-row total-row">
+          <span>Grand Total</span>
+          <span class="grand-total" id="billGrandTotal">₹0</span>
+        </div>
+      </div>
+
+      <button class="btn-checkout" id="checkoutBtn">
+        <span>⚡ Quick Pay / Checkout</span>
+        <strong id="checkoutBtnTotal">₹0</strong>
+      </button>
+    </div>
+  </aside>
+
+  <!-- ========================================== -->
+  <!-- MODAL: CHECKOUT & MOCK UPI PAYMENT         -->
+  <!-- ========================================== -->
+  <div class="modal-backdrop" id="checkoutModal" style="display: none;">
+    <div class="checkout-modal-dialog">
+      <button class="modal-close-btn" id="closeCheckoutBtn" aria-label="Close checkout">✕</button>
+
+      <div class="checkout-modal-header">
+        <h2>Complete Canteen Payment</h2>
+        <p class="demo-tag">🔒 CAMPUS SANDBOX • DEMO TRANSACTION</p>
+      </div>
+
+      <div class="checkout-modal-body">
+        <!-- Order Summary Pill -->
+        <div class="checkout-summary-pill">
+          <div>
+            <span class="label">Amount Payable:</span>
+            <div class="pay-amount" id="checkoutAmountDisplay">₹70</div>
+          </div>
+          <div class="pill-right">
+            <span class="label">Pickup Slot:</span>
+            <span class="slot-badge" id="checkoutSlotBadge">Immediate</span>
+          </div>
+        </div>
+
+        <!-- Payment Method Tabs -->
+        <div class="payment-tabs">
+          <button class="payment-tab-btn active" data-method="upi">
+            📱 UPI QR Code
+          </button>
+          <button class="payment-tab-btn" data-method="wallet">
+            💳 Student Wallet
+          </button>
+        </div>
+
+        <!-- TAB 1: UPI PAYMENT CONTENT -->
+        <div class="payment-tab-content active" id="tabContentUpi">
+          <div class="upi-box">
+            <div class="qr-container-outer">
+              <div id="qrcodeBox" class="qrcode-wrapper">
+                <!-- QR Code rendered here by script -->
+              </div>
+              <div class="qr-scanner-overlay">
+                <span class="qr-crosshair top-left"></span>
+                <span class="qr-crosshair top-right"></span>
+                <span class="qr-crosshair bottom-left"></span>
+                <span class="qr-crosshair bottom-right"></span>
+              </div>
+            </div>
+
+            <div class="upi-details">
+              <span class="upi-id-label">Scan with GPay / PhonePe / Paytm / BHIM</span>
+              <div class="upi-id-badge">
+                <span id="mockUpiId">canteen.pay@campusbhim</span>
+                <button class="btn-copy-upi" id="copyUpiBtn" title="Copy UPI ID">📋</button>
+              </div>
+              <p class="upi-demo-disclaimer">
+                ⚠️ <strong>DEMO MODE:</strong> No real money will be charged. Click "Pay Now (Demo)" to simulate instant UPI confirmation.
+              </p>
+            </div>
+          </div>
+        </div>
+
+        <!-- TAB 2: WALLET PAYMENT CONTENT -->
+        <div class="payment-tab-content" id="tabContentWallet" style="display: none;">
+          <div class="wallet-checkout-box">
+            <div class="wallet-balance-row">
+              <span>Your Current Balance:</span>
+              <strong id="checkoutWalletBalance">₹500</strong>
+            </div>
+            <div class="wallet-balance-row">
+              <span>Order Amount:</span>
+              <strong class="deduct-amount" id="checkoutWalletOrderCost">− ₹70</strong>
+            </div>
+            <hr class="wallet-divider">
+            <div class="wallet-balance-row balance-after-row">
+              <span>Balance After Payment:</span>
+              <strong id="checkoutWalletBalanceAfter">₹430</strong>
+            </div>
+
+            <div class="insufficient-alert" id="insufficientBalanceAlert" style="display: none;">
+              ⚠️ Insufficient wallet balance! Please add funds or switch to UPI.
+            </div>
+          </div>
+        </div>
+
+        <!-- Simulated Processing Animation View (Hidden by default) -->
+        <div class="payment-processing-overlay" id="paymentProcessingOverlay" style="display: none;">
+          <div class="processing-spinner"></div>
+          <h3>Simulating Bank & Canteen Verification...</h3>
+          <p>Connecting to Campus UPI Switch</p>
+          <div class="processing-progress-bar">
+            <div class="progress-fill" id="processingProgressFill"></div>
+          </div>
+          <span class="processing-countdown" id="processingCountdownText">3 seconds remaining</span>
+        </div>
+      </div>
+
+      <div class="checkout-modal-footer">
+        <button class="btn-secondary" id="cancelPaymentBtn">Cancel</button>
+        <button class="btn-pay-now" id="payNowBtn">
+          <span class="btn-lock">🔒</span> Pay Now (Demo) • <span id="payNowBtnAmount">₹70</span>
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ========================================== -->
+  <!-- MODAL: DIGITAL RECEIPT & PICKUP TOKEN      -->
+  <!-- ========================================== -->
+  <div class="modal-backdrop" id="receiptModal" style="display: none;">
+    <div class="receipt-modal-dialog">
+      <!-- Success Header Graphic -->
+      <div class="receipt-success-header">
+        <div class="success-icon-bounce">✓</div>
+        <h2>Payment Successful!</h2>
+        <p>Your order has been routed directly to the kitchen display</p>
+      </div>
+
+      <!-- Receipt Paper Card -->
+      <div class="receipt-ticket">
+        <div class="ticket-header">
+          <span class="canteen-name">CAMPUS QUICK BITE</span>
+          <span class="canteen-sub">COLLEGE MAIN CANTEEN • COUNTER 1 & 2</span>
+        </div>
+
+        <div class="ticket-token-spotlight">
+          <span class="spotlight-label">YOUR PICKUP TOKEN</span>
+          <div class="spotlight-token" id="receiptTokenNumber">#B-001</div>
+          <span class="spotlight-note">Please monitor the Live Pickup Display board</span>
+        </div>
+
+        <div class="ticket-divider-jagged"></div>
+
+        <div class="ticket-info-grid">
+          <div>
+            <span class="info-k">Order ID:</span>
+            <span class="info-v" id="receiptOrderId">ORD-8921</span>
+          </div>
+          <div>
+            <span class="info-k">Date & Time:</span>
+            <span class="info-v" id="receiptTimestamp">Nov 20, 12:30 PM</span>
+          </div>
+          <div>
+            <span class="info-k">Pickup Slot:</span>
+            <span class="info-v highlight" id="receiptSlot">Immediate</span>
+          </div>
+          <div>
+            <span class="info-k">Est. Cooking Time:</span>
+            <span class="info-v" id="receiptPrepTime">5 minutes</span>
+          </div>
+          <div>
+            <span class="info-k">Payment Mode:</span>
+            <span class="info-v" id="receiptPayMethod">Mock UPI (Paid)</span>
+          </div>
+          <div>
+            <span class="info-k">Order Status:</span>
+            <span class="info-v status-paid-badge" id="receiptStatus">PAID (Sent to Kitchen)</span>
+          </div>
+        </div>
+
+        <div class="ticket-divider-line"></div>
+
+        <div class="ticket-items-list" id="receiptItemsList">
+          <!-- Rendered dynamically -->
+        </div>
+
+        <div class="ticket-total-row">
+          <span>Total Paid:</span>
+          <strong id="receiptTotalAmount">₹70</strong>
+        </div>
+      </div>
+
+      <div class="receipt-actions">
+        <button class="btn-primary" id="receiptTrackBtn">
+          📍 Track This Order Live
+        </button>
+        <button class="btn-secondary" id="receiptViewKitchenBtn">
+          👨‍🍳 View in Kitchen Console
+        </button>
+        <button class="btn-text-only" id="receiptNewOrderBtn">
+          Place Another Order
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ========================================== -->
+  <!-- MODAL: KITCHEN INVENTORY & OUT-OF-STOCK    -->
+  <!-- ========================================== -->
+  <div class="modal-backdrop" id="inventoryModal" style="display: none;">
+    <div class="inventory-modal-dialog">
+      <div class="inventory-modal-header">
+        <div>
+          <h2>Menu Availability & Inventory</h2>
+          <p>Toggle items In Stock or Sold Out. Changes reflect instantly on the student kiosk.</p>
+        </div>
+        <button class="modal-close-btn" id="closeInventoryBtn">✕</button>
+      </div>
+
+      <div class="inventory-controls-bar">
+        <input type="text" id="inventorySearchInput" placeholder="Search menu items to toggle...">
+        <button class="btn-secondary" id="markAllInStockBtn">Reset All to Available</button>
+      </div>
+
+      <div class="inventory-table-wrap">
+        <table class="inventory-table">
+          <thead>
+            <tr>
+              <th>Item Name</th>
+              <th>Category</th>
+              <th>Price</th>
+              <th>Prep Time</th>
+              <th>Current Status</th>
+              <th>Action Toggle</th>
+            </tr>
+          </thead>
+          <tbody id="inventoryTableBody">
+            <!-- Dynamic rows -->
+          </tbody>
+        </table>
+      </div>
+
+      <div class="inventory-modal-footer">
+        <button class="btn-primary" id="doneInventoryBtn">Close & Return to Kitchen</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Toast Notification Container -->
+  <div class="toast-container" id="toastContainer" aria-live="polite"></div>
+
+  <!-- Main JavaScript Application Logic -->
+  <script src="script.js"></script>
+</body>
+</html>
