@@ -705,7 +705,7 @@ class CanteenApp {
       return `
         <div class="food-card ${!isAvailable ? 'sold-out' : ''}" data-item-id="${item.id}">
           <div class="card-img-wrap">
-            <img src="${item.image}" alt="${item.name}" loading="lazy" onerror="this.onerror=null; this.src='${fallbackSvg}';">
+            <img src="${item.image}" alt="${item.name}" loading="lazy" decoding="async" width="400" height="300" data-fallback="${item.name}|${item.category}">
             <span class="veg-indicator-dot ${vegClass}" title="${item.isEgg ? 'Contains Egg' : '100% Vegetarian'}"></span>
             <div class="prep-badge-overlay">
               <span>⏱️ ${item.prepTime} min</span>
@@ -786,7 +786,7 @@ class CanteenApp {
     }
     if (vegBadge) {
       vegBadge.textContent = item.isEgg ? '🥚 Contains Egg' : '🟢 100% Pure Veg';
-      vegBadge.style.color = item.isEgg ? '#D97706' : '#10B981';
+      vegBadge.style.color = item.isEgg ? '#B45309' : '#047857';
     }
     if (catTag) catTag.textContent = item.category;
     if (nameEl) nameEl.textContent = item.name;
@@ -1013,7 +1013,7 @@ class CanteenApp {
         return `
           <div class="cart-item-row">
             <button class="btn-remove-item" onclick="app.removeCartItem(${index})" title="Remove item">✕</button>
-            <img class="cart-item-thumb" src="${item.image}" alt="${item.name}" onerror="this.onerror=null; this.src='${generateFoodSvgPlaceholder(item.name, item.category)}';">
+            <img class="cart-item-thumb" src="${item.image}" alt="${item.name}" width="56" height="56" loading="lazy" data-fallback="${item.name}|${item.category}">
             <div class="cart-item-info">
               <h4 class="cart-item-name">${item.name}</h4>
               ${customBadge}
@@ -1596,7 +1596,7 @@ class CanteenApp {
     if (pillsContainer) {
       pillsContainer.innerHTML = `<span class="recent-label">Recent Tokens:</span>`;
       if (recentTokens.length === 0) {
-        pillsContainer.innerHTML += `<span style="color:#94A3B8; font-size:0.75rem;">No recent orders placed yet</span>`;
+        pillsContainer.innerHTML += `<span style="color:#5F6B77; font-size:0.75rem;">No recent orders placed yet</span>`;
       } else {
         recentTokens.forEach(t => {
           const chip = document.createElement('span');
@@ -1731,7 +1731,7 @@ class CanteenApp {
 
     if (txList) {
       if (transactions.length === 0) {
-        txList.innerHTML = `<p style="color:#94A3B8; text-align:center; padding:1rem;">No transactions yet.</p>`;
+        txList.innerHTML = `<p style="color:#5F6B77; text-align:center; padding:1rem;">No transactions yet.</p>`;
         return;
       }
       txList.innerHTML = transactions.map(tx => `
@@ -1784,7 +1784,7 @@ class CanteenApp {
           <td>₹${item.price}</td>
           <td>${item.prepTime} min</td>
           <td>
-            <span style="font-size:0.78rem; font-weight:700; color:${isAvailable ? '#10B981' : '#EF4444'};">
+            <span style="font-size:0.78rem; font-weight:700; color:${isAvailable ? '#047857' : '#B91C1C'};">
               ${isAvailable ? '● In Stock' : '✕ Sold Out'}
             </span>
           </td>
@@ -2167,3 +2167,14 @@ const app = new CanteenApp();
 document.addEventListener('DOMContentLoaded', () => {
   app.init();
 });
+
+
+// Delegated image-error fallback (replaces inline onerror handlers)
+document.addEventListener('error', (e) => {
+  const img = e.target;
+  if (img && img.tagName === 'IMG' && img.dataset.fallback && !img.dataset.failed) {
+    img.dataset.failed = '1';
+    const [name, category] = img.dataset.fallback.split('|');
+    img.src = generateFoodSvgPlaceholder(name, category);
+  }
+}, true);

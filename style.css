@@ -15,17 +15,17 @@
 
   --text-main: #1D2327;
   --text-muted: #5A6570;
-  --text-light: #8C98A4;
+  --text-light: #5F6B77;
 
-  --primary-orange: #FF6600;
-  --primary-orange-hover: #E65500;
+  --primary-orange: #C2410C;
+  --primary-orange-hover: #9A3412;
   --primary-orange-light: #FFF0E6;
 
-  --success-green: #10B981;
-  --success-green-hover: #059669;
+  --success-green: #047857;
+  --success-green-hover: #065F46;
   --success-green-light: #E6F7F0;
 
-  --warning-amber: #F59E0B;
+  --warning-amber: #B45309;
   --warning-amber-light: #FEF3C7;
 
   --danger-red: #EF4444;
@@ -2790,7 +2790,7 @@ body {
 .tv-empty-column {
   text-align: center;
   padding: 3rem 1rem;
-  color: #64748B;
+  color: #94A3B8;
   font-size: 0.95rem;
 }
 
@@ -3277,7 +3277,7 @@ body {
   font-size: 0.9rem;
 }
 
-.tx-icon.credit { background: #D1FAE5; color: #059669; }
+.tx-icon.credit { background: #D1FAE5; color: #047857; }
 .tx-icon.debit { background: #FEE2E2; color: #DC2626; }
 
 .tx-desc {
@@ -3297,7 +3297,7 @@ body {
   font-weight: 800;
 }
 
-.tx-amount.credit { color: #059669; }
+.tx-amount.credit { color: #047857; }
 .tx-amount.debit { color: #DC2626; }
 
 /* ==========================================================================
@@ -3391,4 +3391,50 @@ body {
   .topup-btn-group {
     grid-template-columns: repeat(2, 1fr);
   }
+}
+
+
+/* ==========================================================================
+   ACCESSIBILITY & POLISH ADDITIONS
+   ========================================================================== */
+.skip-link {
+  position: absolute;
+  left: 0.5rem;
+  top: -4rem;
+  z-index: 10000;
+  padding: 0.6rem 1rem;
+  background: #1D2327;
+  color: #FFFFFF;
+  border-radius: 0 0 8px 8px;
+  text-decoration: none;
+  font-weight: 600;
+}
+.skip-link:focus { top: 0; }
+
+#main-content { display: block; }
+
+:focus-visible {
+  outline: 3px solid #C2410C;
+  outline-offset: 2px;
+}
+
+button, select, input, .nav-tab, .category-pill {
+  touch-action: manipulation;
+}
+button { min-height: 32px; }
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
+@media (max-width: 480px) {
+  .food-grid { grid-template-columns: 1fr; }
+  .tv-columns-layout { padding: 1rem; }
+  .topup-btn-group { grid-template-columns: repeat(2, 1fr); }
+  .nav-views { overflow-x: auto; flex-wrap: nowrap; }
 }
